@@ -1,7 +1,0 @@
-Flappy
-======
-
-Flappy (the name stands for FLash-like APi for PYthon) is a cross-platform
-graphics/media library with the API very similar to the Adobe Flash API.
-Flappy is built on top of the SDL2 library and a slightly modified subset of
-c/c++ code from the OpenFL-Lime project.

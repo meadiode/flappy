@@ -74,6 +74,7 @@ setup(  name='Flappy',
         long_description=readme,
         author='Michael P.',
         author_email='pyronimous@gmail.com',
+        url='https://github.com/pyronimous/flappy',
         license='MIT',
         cmdclass={ 
             'build_extensions_with_waf' : build_extensions_with_waf,
