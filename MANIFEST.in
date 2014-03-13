@@ -1,0 +1,5 @@
+include setup.py README.md LICENSE.md waf wscript
+recursive-include openfl_lime *.h *.c *.cpp *.m *.mm wscript
+recursive-include _core *.pyx *.pxi *.pxd wscript
+recursive-include _gl *.pyx *.pxi *.pxd *.h wscript
+recursive-include samples *.py *.ttf *.png *.jpg *.frag *.txt
