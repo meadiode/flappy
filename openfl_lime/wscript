@@ -1,0 +1,164 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+import sys
+import os
+import waflib
+
+
+def configure(conf):
+    conf.load(['compiler_cxx', 'compiler_c', 'python'])
+
+    conf.env.LIME_SOURCE = [
+        'src/common/CachedExtent.cpp',
+        'src/common/ColorTransform.cpp',
+        'src/common/Cursors.cpp',
+        'src/common/Display.cpp',
+        'src/common/Filters.cpp',
+        'src/common/Font.cpp',
+        'src/common/FreeType.cpp',
+        'src/common/Geom.cpp',
+        'src/common/Graphics.cpp',
+        'src/common/GraphicsData.cpp',
+        'src/common/Hardware.cpp',
+        'src/common/Input.cpp',
+        'src/common/ManagedStage.cpp',
+        'src/common/Matrix.cpp',
+        'src/common/SurfaceIO.cpp',
+        'src/common/Tessellate.cpp',
+        'src/common/TextField.cpp',
+        'src/common/Thread.cpp',
+        'src/common/Tilesheet.cpp',
+        'src/common/Utils.cpp',
+        'src/common/ByteArray.cpp',
+
+        'src/common/XML/tinystr.cpp',
+        'src/common/XML/tinyxml.cpp',
+        'src/common/XML/tinyxmlerror.cpp',
+        'src/common/XML/tinyxmlparser.cpp',
+
+        'src/backend/sdl2/SDL2Stage.cpp',
+
+        'src/renderer/common/BitmapCache.cpp',
+        'src/renderer/common/HardwareSurface.cpp',
+        'src/renderer/common/SimpleSurface.cpp',
+        'src/renderer/common/Surface.cpp',
+
+        'src/renderer/software/AlphaMask.cpp',
+        'src/renderer/software/BitmapFill.cpp',
+        'src/renderer/software/BitmapFillPerspective.cpp',
+        'src/renderer/software/GradientFill.cpp',
+        'src/renderer/software/LineRender.cpp',
+        'src/renderer/software/PointRenderer.cpp',
+        'src/renderer/software/PolygonRender.cpp',
+        'src/renderer/software/SoftwareRenderer.cpp',
+        'src/renderer/software/SolidFill.cpp',
+        'src/renderer/software/SolidRender.cpp',
+        'src/renderer/software/TileRenderer.cpp',
+        'src/renderer/software/TriangleRender.cpp',
+
+        'src/renderer/opengl/OpenGL2Context.cpp',
+        'src/renderer/opengl/OpenGLContext.cpp',
+        'src/renderer/opengl/OpenGLInit.cpp',
+        'src/renderer/opengl/OpenGLProgram.cpp',
+        'src/renderer/opengl/OpenGLShaders.cpp',
+        'src/renderer/opengl/OpenGLTexture.cpp',
+    ]
+
+    conf.env.LIME_INCLUDES = [
+        'include',
+        'include/renderer/common',
+        'include/renderer/opengl',
+    ]
+
+    plat = conf.options.platform
+
+    if conf.options.use_prebuilt_libs:
+        conf.env.LIME_INCLUDES += [
+            '../libs/freetype/include',
+            '../libs/sdl2/include',
+            '../libs/jpeg/include',
+            '../libs/png/include',
+            '../libs/freetype/config/%s' % plat,
+            '../libs/sdl2/config/%s' % plat,
+            '../libs/jpeg/config/%s' % plat,
+            '../libs/png/config/%s' % plat,
+        ]
+    
+    conf.env.M_64 = plat in ('linux64', 'mac64')
+    conf.env.UNIX = plat in ('linux', 'linux64', 'mac', 'mac64')
+
+    if conf.env.UNIX:
+        conf.env.LIME_CXXFLAGS = [
+            '-c',
+            '-O0' if conf.options.debug else '-O3',
+            '-m64' if conf.env.M_64 else '-m32',
+            '-fPIC',
+        ]
+        conf.env.LIME_LINKFLAGS = [
+            '-m64' if conf.env.M_64 else '-m32',
+            '-fPIC',
+        ]
+
+#linux
+    if plat in ('linux', 'linux64'):
+        conf.env.LIME_SOURCE += [
+            './src/platform/linux/NativeFont.cpp',
+            './src/platform/linux/System.cpp',
+        ]        
+        conf.env.LIME_DEFINES += [
+            'SDL_OGL', 
+            'HX_LINUX', 
+            'ALLOW_OGL2',
+        ]
+
+#mac
+    if plat in ('mac', 'mac64'):
+        conf.env.LIME_SOURCE += [
+            './src/platform/mac/MacBoot.m',
+            './src/platform/mac/NSFont.cpp',
+            './src/platform/mac/System.mm',
+            './src/platform/cocoa/FileManager.mm',
+        ]        
+        conf.env.LIME_DEFINES += [
+            'SDL_OGL', 
+            'HX_MACOS',
+        ]
+
+#win32
+    if plat == 'win32':
+        conf.env.LIME_CXXFLAGS = [
+            '/c', 
+            '/Od' if conf.options.debug else '/Ox',
+            '/EHsc',
+            '/MD',
+        #defines
+            '/DHX_WINDOWS',
+            '/DSDL_OGL',
+            '/DNOMINMAX',
+        ]
+        conf.env.LIME_SOURCE += [
+            './src/platform/windows/GDIFont.cpp',
+            './src/platform/windows/System.cpp',
+        ] 
+
+
+def build(bld):
+    bld(
+        target='openfl_lime',
+        features='cxx',
+        defines=bld.env.LIME_DEFINES,
+        cxxflags=bld.env.LIME_CXXFLAGS,
+        cflags=bld.env.LIME_CFLAGS,
+        source=bld.env.LIME_SOURCE,
+        includes=bld.env.LIME_INCLUDES)
+
+from waflib import TaskGen
+
+@TaskGen.extension('.m')
+def m_hook(self, node):
+    return self.create_compiled_task('cxx', node)
+
+@TaskGen.extension('.mm')
+def mm_hook(self, node):
+    return self.create_compiled_task('cxx', node)

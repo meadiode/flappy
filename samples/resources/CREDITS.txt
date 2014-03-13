@@ -1,0 +1,8 @@
+
+- Ponyville background by Austiniousi (http://austiniousi.deviantart.com/)
+
+- Parasprite sheet by Beefster09 (http://beefster09.deviantart.com/)
+
+- Papercuts-2 font by Daniel Werneck (http://www.dafont.com/daniel-leal-werneck.d1036?fpp=100&l[]=10)
+
+- All content of the heroku_****.frag files is copy-pasted from the glsl.heroku.com site
