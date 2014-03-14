@@ -46,6 +46,7 @@ def configure(conf):
     conf.env._CORE_USE = ['openfl_lime']
 
     conf.env.append_unique('CYTHONFLAGS', '--cplus')
+    conf.env.append_unique('CYTHONFLAGS', '--fast-fail')
 
 
 #linux
@@ -71,20 +72,6 @@ def configure(conf):
 
 #win32
     if plat == 'win32':
-        conf.env._CORE_CXXFLAGS = [
-            '/c', 
-            '/Od' if conf.options.debug else '/Od',
-            '/EHsc',
-            '/MD',
-        #defines
-            '/DHX_WINDOWS',
-            '/DSDL_OGL',
-            '/DNOMINMAX',
-        ]
-        conf.env._CORE_LINKFLAGS = [
-            '/PROFILE',
-            '/NODEFAULTLIB:LIBCMTD',
-        ]
         conf.env._CORE_STLIB += ['zlib']
         conf.env._CORE_LIB += [
             'kernel32', 
@@ -124,7 +111,7 @@ def build(bld):
         
     bld.add_group()
     bld.shlib(
-        target='../../_core',
+        target='_core',
         use=bld.env._CORE_USE,
         features='cxx cxxshlib cython pyext',
         cxxflags=bld.env._CORE_CXXFLAGS,

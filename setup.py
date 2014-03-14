@@ -66,7 +66,7 @@ class fbuild(build):
 sys.path.append('./flappy')
 from __version__ import VERSION
 
-readme = open('./README', 'r').read()
+readme = open('./README.md', 'r').read()
 
 setup(  name='Flappy',
         version=VERSION,

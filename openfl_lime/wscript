@@ -85,18 +85,20 @@ def configure(conf):
             '../libs/png/config/%s' % plat,
         ]
     
-    conf.env.M_64 = plat in ('linux64', 'mac64')
-    conf.env.UNIX = plat in ('linux', 'linux64', 'mac', 'mac64')
+    debug = conf.options.debug
+    m_64 = plat in ('linux64', 'mac64')
+    gcc = plat in ('linux', 'linux64', 'mac', 'mac64')
 
-    if conf.env.UNIX:
+    if gcc:
         conf.env.LIME_CXXFLAGS = [
             '-c',
-            '-O0' if conf.options.debug else '-O3',
-            '-m64' if conf.env.M_64 else '-m32',
+            '-O0' if debug else '-O3',
+            '-g' if debug else '',
+            '-m64' if m_64 else '-m32',
             '-fPIC',
         ]
         conf.env.LIME_LINKFLAGS = [
-            '-m64' if conf.env.M_64 else '-m32',
+            '-m64' if m_64 else '-m32',
             '-fPIC',
         ]
 
@@ -129,13 +131,19 @@ def configure(conf):
     if plat == 'win32':
         conf.env.LIME_CXXFLAGS = [
             '/c', 
-            '/Od' if conf.options.debug else '/Ox',
             '/EHsc',
-            '/MD',
+            '/Od' if debug else '/Ox',
+            '/MDd' if debug else '/MD',
+            '/Zi' if debug else '',
         #defines
+            '/D_DEBUG' if debug else '',
             '/DHX_WINDOWS',
             '/DSDL_OGL',
             '/DNOMINMAX',
+        ]
+        conf.env._LIME_LINKFLAGS = [
+            '/PROFILE',
+            '/NODEFAULTLIB:LIBCMTD',
         ]
         conf.env.LIME_SOURCE += [
             './src/platform/windows/GDIFont.cpp',
