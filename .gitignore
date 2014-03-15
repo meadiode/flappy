@@ -20,3 +20,4 @@ MANIFEST
 dist/*
 flappy/*.so
 flappy/*.pyd
+*.egg-info

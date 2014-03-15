@@ -1,9 +1,11 @@
 #! /usr/bin/env python
 # coding: utf-8
 
-from distutils.core import setup, Command, Extension
-from distutils.command.build import build
+from setuptools import setup, Command, Extension
+from setuptools.command.install import install
 from distutils.util import get_platform
+from distutils.dist import Distribution
+
 import subprocess
 import glob
 import sys
@@ -43,8 +45,6 @@ class build_extensions_with_waf(Command):
         self.plat_name = get_platform()
 
     def run(self):
-        print self.distribution.ext_package
-
         options = ['--platform=%s' % self.platform,
                     '--install-path=./flappy']
         if self.debug:
@@ -57,16 +57,19 @@ class build_extensions_with_waf(Command):
         subprocess.check_call(['python', 'waf', 'install'])
 
 
-class fbuild(build):
+class flappy_install(install):
     def run(self):
         self.run_command("build_extensions_with_waf")
-        build.run(self)
+        install.run(self)
 
+class flappy_dist(Distribution):
+    def has_ext_modules(self):
+        return True
 
 sys.path.append('./flappy')
 from __version__ import VERSION
 
-readme = open('./README.md', 'r').read()
+readme = open('./README.rst', 'r').read()
 
 setup(  name='Flappy',
         version=VERSION,
@@ -76,9 +79,10 @@ setup(  name='Flappy',
         author_email='pyronimous@gmail.com',
         url='https://github.com/pyronimous/flappy',
         license='MIT',
+        distclass=flappy_dist,
         cmdclass={ 
             'build_extensions_with_waf' : build_extensions_with_waf,
-            'build' : fbuild,
+            'install' : flappy_install,
         },
         packages=[
             'flappy',

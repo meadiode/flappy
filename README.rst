@@ -2,17 +2,30 @@ Flappy
 ======
 
 
-Flappy (the name stands for FLash-like APi for PYthon) is a cross-platform graphics/media library with the API very similar to the Adobe Flash API. Flappy is built on top of the SDL2_ library and a slightly modified subset of c/c++ code from the OpenFL-Lime_ project.
+Flappy (the name stands for FLash-like APi for PYthon) is a cross platform graphics/media library with the API very similar to the Adobe Flash API. Flappy is built on top of the SDL2_ library and a slightly modified subset of c/c++ code from the OpenFL-Lime_ project.
+
+.. _SDL2: http://libsdl.org
+.. _OpenFL-Lime: https://github.com/openfl/lime
 
 Features
 --------
-* lol
-* lol
+* Runs on Windows, Linux, Mac OS X
+* GPU accelerated
+* Drawing images, text, shapes, gradients
+* Flash-like display list, display objects, containers
+* User input events and other events handling and propagation
+* 3D graphics support
+
+Install
+-------
+
+Build
+-----
 
 Quick example
 -------------
 
-.. code-block::
+::
 
     import flappy
     from flappy.display import Sprite
@@ -44,7 +57,7 @@ This code draws a black-outlined orange circle inside a window sized 400x400 pix
 
 For the comparison, here is the code in ActionScript 3 which does the same:
 
-.. code-block::
+::
 
     package {
         [SWF (width="400", height="400")]
@@ -72,6 +85,3 @@ For the comparison, here is the code in ActionScript 3 which does the same:
             }
         }
     }
-
-.. _SDL2: http://libsdl.org
-.. _OpenFL-Lime: https://github.com/openfl/lime
