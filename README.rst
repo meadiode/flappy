@@ -29,16 +29,18 @@ In Mac or Linux, try:
 ::
     easy_install flappy
 
-For windows, download the installer (one of Flappy-***.win32.exe files) here_
+For windows, download the installer (one of Flappy-xxx.win32.exe files) here_
 
 .. _here: http://pypi.python.org/pypi/Flappy#downloads
 
 Build from source
 -----------------
 To build Flappy, Cython_ 0.19.1 or above is required. 
+
 .. _Cython: http://cython.org/#download
 
 Also the following libraries needed:
+
 * SDL2
 * freetype 2
 * libpng 1.6
@@ -89,13 +91,16 @@ This code draws a black-outlined orange circle inside a window sized 400x400 pix
 .. image:: http://i.imgur.com/wqtfqz2.png
 
 For the comparison, here is the code_ in ActionScript 3 which does the same.
+
 .. _code: https://gist.github.com/pyronimous/9588523
     
 
 Help
 ----
-For now, documentation is a stub. But you can take a look at `ActionScript3 API reference for Flash`_. Classes and method in packages flappy.display, flappy.events, flappy.geom, flappy.text are very similar to the classes and methods in Flash's corresponding packages.
-.. _`ActionScript3 API reference for Flash`_: http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/
+For now, documentation is a stub. But you can take a look at ActionScript3 API reference_ for Flash. Classes and method in packages flappy.display, flappy.events, flappy.geom, flappy.text are very similar to the classes and methods in Flash's corresponding packages.
+
+.. _reference: http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/
 
 Also, see samples:
+
 .. image:: http://i.imgur.com/VVUFH8f.png
