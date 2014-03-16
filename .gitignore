@@ -16,6 +16,7 @@ waflib/*
 *.d
 *.class
 project.sublime-workspace
+project.st2
 MANIFEST
 dist/*
 flappy/*.so
