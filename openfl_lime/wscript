@@ -74,16 +74,21 @@ def configure(conf):
     plat = conf.options.platform
 
     if conf.options.use_prebuilt_libs:
-        conf.env.LIME_INCLUDES += [
-            '../libs/freetype/include',
-            '../libs/sdl2/include',
-            '../libs/jpeg/include',
-            '../libs/png/include',
-            '../libs/freetype/config/%s' % plat,
-            '../libs/sdl2/config/%s' % plat,
-            '../libs/jpeg/config/%s' % plat,
-            '../libs/png/config/%s' % plat,
+        root_path = conf.path.find_node('..').abspath()
+        deps_dir = os.path.join(root_path, '../flappy_prebuilt_dependencies')
+
+        deps_includes = [
+            'freetype/include',
+            'sdl2/include',
+            'jpeg/include',
+            'png/include',
+            'freetype/config/%s' % plat,
+            'sdl2/config/%s' % plat,
+            'jpeg/config/%s' % plat,
+            'png/config/%s' % plat,
         ]
+        deps_includes = map(lambda p: os.path.join(deps_dir, p), deps_includes)
+        conf.env.LIME_INCLUDES += deps_includes
     
     debug = conf.options.debug
     m_64 = plat in ('linux64', 'mac64')
@@ -152,8 +157,7 @@ def configure(conf):
 
 
 def build(bld):
-    bld(
-        target='openfl_lime',
+    bld(target='openfl_lime',
         features='cxx',
         defines=bld.env.LIME_DEFINES,
         cxxflags=bld.env.LIME_CXXFLAGS,

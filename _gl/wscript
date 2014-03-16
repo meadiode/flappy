@@ -15,14 +15,9 @@ def configure(conf):
         '../openfl_lime/include',
         '../openfl_lime/include/renderer/opengl',
     ]
+    conf.env._GL_INCLUDES += conf.env.LIME_INCLUDES
 
     plat = conf.options.platform
-
-    if conf.options.use_prebuilt_libs:
-        conf.env._GL_INCLUDES += [
-            '../libs/sdl2/include',
-            '../libs/sdl2/config/%s' % plat,
-        ]
 
     conf.env._GL_LIB = []
     conf.env._GL_USE = []

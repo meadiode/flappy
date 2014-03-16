@@ -15,29 +15,26 @@ def configure(conf):
         '../openfl_lime/include/renderer/common',
         '../openfl_lime/include/renderer/opengl',
     ]
+    conf.env._CORE_INCLUDES += conf.env.LIME_INCLUDES
 
     plat = conf.options.platform
-    root_path = conf.path.find_node('..').abspath()
 
     if conf.options.use_prebuilt_libs:
-        conf.env._CORE_INCLUDES += [
-            '../libs/freetype/include',
-            '../libs/sdl2/include',
-            '../libs/jpeg/include',
-            '../libs/png/include',
-            '../libs/freetype/config/%s' % plat,
-            '../libs/sdl2/config/%s' % plat,
-            '../libs/jpeg/config/%s' % plat,
-            '../libs/png/config/%s' % plat,
-        ]
+        root_path = conf.path.find_node('..').abspath()
+        deps_dir = os.path.join(root_path, '../flappy_prebuilt_dependencies')
 
         conf.env._CORE_STLIB = ['SDL2', 'freetype', 'png', 'jpeg']
-        conf.env._CORE_STLIBPATH = [
-            '%s/libs/sdl2/lib/%s' % (root_path, plat),
-            '%s/libs/freetype/lib/%s' % (root_path, plat),
-            '%s/libs/png/lib/%s' % (root_path, plat),
-            '%s/libs/jpeg/lib/%s' % (root_path, plat),
+            
+        deps_lib_dirs = [    
+            'sdl2/lib/%s' % plat,
+            'freetype/lib/%s' % plat,
+            'png/lib/%s' % plat,
+            'jpeg/lib/%s' % plat,
         ]
+        deps_lib_dirs = map(lambda p: os.path.join(deps_dir, p), 
+                                                            deps_lib_dirs)
+        conf.env._CORE_STLIBPATH = deps_lib_dirs
+
     else:
         conf.env._CORE_LIB = ['SDL2', 'freetype', 'png', 'jpeg']
 
