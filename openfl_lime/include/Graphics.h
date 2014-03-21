@@ -308,7 +308,7 @@ public:
             const QuickVec<int> &inIndixes,
             const QuickVec<float> &inUVT, int inCull,
             const QuickVec<int> &inColours,
-            int blendMode, const QuickVec<float,4> &inViewport );
+            int blendMode);
 
    VertexType       mType;
    int              mTriangleCount;
@@ -316,7 +316,6 @@ public:
    QuickVec<float>  mUVT;
    QuickVec<uint32> mColours;
    int mBlendMode;
-   QuickVec<float,4> mViewport;
 };
 
 // ----------------------------------------------------------------------
@@ -457,84 +456,9 @@ struct RenderState
 };
 
 
-void ResetHardwareContext();
+class HardwareData;
+class HardwareContext;
 
-
-
-enum PrimType { ptTriangleFan, ptTriangleStrip, ptTriangles, ptLineStrip, ptPoints, ptLines };
-
-struct DrawElement
-{
-   uint8    mPrimType;
-   bool     mBitmapRepeat;
-   bool     mBitmapSmooth;
-   int      mFirst;
-   int      mCount;
-   uint32   mColour;
-   float    mWidth;
-   StrokeScaleMode mScaleMode;
-};
-
-typedef QuickVec<DrawElement> DrawElements;
-typedef QuickVec<UserPoint>   Vertices;
-typedef QuickVec<UserPoint>   TexCoords;
-typedef QuickVec<int>         Colours;
-
-void ReleaseVertexBufferObject(unsigned int inVBO);
-
-void ConvertOutlineToTriangles(Vertices &ioOutline,const QuickVec<int> &inSubPolys);
-
-struct HardwareArrays
-{
-   enum
-   {
-     BM_ADD      = 0x00000001,
-     PERSPECTIVE = 0x00000002,
-     RADIAL      = 0x00000004,
-     BM_MULTIPLY = 0x00000008,
-     BM_SCREEN   = 0x00000010,
-     
-     AM_PREMULTIPLIED = 0x00000100,
-
-     FOCAL_MASK  = 0x0000ff00,
-     FOCAL_SIGN  = 0x00010000,
-   };
-
-   HardwareArrays(Surface *inSurface,unsigned int inFlags);
-   ~HardwareArrays();
-   bool ColourMatch(bool inWantColour);
-
-
-   DrawElements mElements;
-   Vertices     mVertices;
-   TexCoords    mTexCoords;
-	Colours      mColours;
-   QuickVec<float,4> mViewport;
-   Surface      *mSurface;
-   unsigned int mFlags;
-   //unsigned int mVertexBO;
-};
-
-typedef QuickVec<HardwareArrays *> HardwareCalls;
-
-class HardwareData
-{
-public:
-   ~HardwareData();
-
-   HardwareArrays &GetArrays(Surface *inSurface,bool inWithColour,unsigned int inFlags);
-
-   HardwareCalls mCalls;
-   
-};
-
-
-
-
-extern HardwareContext *gDirectRenderContext;
-
-void BuildHardwareJob(const class GraphicsJob &inJob,const GraphicsPath &inPath,
-                      HardwareData &ioData, HardwareContext &inHardware);
 
 int UpToPower2(int inX);
 inline int IsPower2(unsigned int inX) { return (inX & (inX-1))==0; }
@@ -669,7 +593,7 @@ public:
    void drawPoints(QuickVec<float> inXYs, QuickVec<int> inRGBAs, unsigned int inDefaultRGBA=0xffffffff, double inSize=-1.0 );
    void drawTriangles(const QuickVec<float> &inXYs, const QuickVec<int> &inIndixes,
             const QuickVec<float> &inUVT, int inCull, const QuickVec<int> &inColours,
-            int blendMode, const QuickVec<float,4> &inViewport );
+            int blendMode);
 
    const Extent2DF &GetExtent0(double inRotation);
    bool  HitTest(const UserPoint &inPoint);

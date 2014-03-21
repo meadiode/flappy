@@ -139,7 +139,7 @@ value lime_gl_get_parameter(value pname_val)
 {
    int floats = 0;
    int ints = 0;
-   int strings = 1;
+   int strings = 0;
    int pname = val_int(pname_val);
 
    switch(pname)
@@ -169,14 +169,13 @@ value lime_gl_get_parameter(value pname_val)
          ints = 4;
          break;
 
-      // case GL_ARRAY_BUFFER_BINDING	WebGLBuffer
-      // case GL_CURRENT_PROGRAM	WebGLProgram
-      // case GL_ELEMENT_ARRAY_BUFFER_BINDING	WebGLBuffer
-      // case GL_FRAMEBUFFER_BINDING	WebGLFramebuffer
-      // case GL_RENDERBUFFER_BINDING	WebGLRenderbuffer
-      // case GL_TEXTURE_BINDING_2D	WebGLTexture
-      // case GL_TEXTURE_BINDING_CUBE_MAP	WebGLTexture
-
+      case GL_ARRAY_BUFFER_BINDING:
+      case GL_CURRENT_PROGRAM:
+      case GL_ELEMENT_ARRAY_BUFFER_BINDING:
+      case GL_FRAMEBUFFER_BINDING:
+      case GL_RENDERBUFFER_BINDING:
+      case GL_TEXTURE_BINDING_2D:
+      case GL_TEXTURE_BINDING_CUBE_MAP:
       case GL_DEPTH_CLEAR_VALUE:
       case GL_LINE_WIDTH:
       case GL_POLYGON_OFFSET_FACTOR:
@@ -222,7 +221,7 @@ value lime_gl_get_parameter(value pname_val)
       //case GL_MAX_VARYING_VECTORS:
       case GL_MAX_VERTEX_ATTRIBS:
       case GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS:
-      //case GL_MAX_VERTEX_UNIFORM_VECTORS:
+      case GL_MAX_VERTEX_UNIFORM_VECTORS:
       case GL_NUM_COMPRESSED_TEXTURE_FORMATS:
       case GL_PACK_ALIGNMENT:
       case GL_RED_BITS:
@@ -315,17 +314,13 @@ GL_IS(program,Program)
 //GL_IS(renderbuffer,Renderbuffer)
 
 value lime_gl_is_framebuffer(value val) { 
-	#ifndef HX_LINUX
 	if (&glIsFramebuffer) return alloc_bool(glIsFramebuffer(val_int(val)));
-	#endif
 	return alloc_bool(false);
 }
 DEFINE_PRIM(lime_gl_is_framebuffer,1);
 
 value lime_gl_is_renderbuffer(value val) { 
-	#ifndef HX_LINUX
 	if (&glIsRenderbuffer) return alloc_bool(glIsRenderbuffer(val_int(val)));
-	#endif
 	return alloc_bool(false);
 }
 DEFINE_PRIM(lime_gl_is_renderbuffer,1);
@@ -407,9 +402,7 @@ DEFINE_PRIM(lime_gl_blend_equation,1);
 
 value lime_gl_blend_equation_separate(value rgb, value a)
 {
-   #ifndef HX_LINUX
    glBlendEquationSeparate(val_int(rgb), val_int(a));
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_blend_equation_separate,2);
@@ -425,9 +418,7 @@ DEFINE_PRIM(lime_gl_blend_func,2);
 
 value lime_gl_blend_func_separate(value srgb, value drgb, value sa, value da)
 {
-   #ifndef HX_LINUX   
    glBlendFuncSeparate(val_int(srgb), val_int(drgb), val_int(sa), val_int(da) );
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_blend_func_separate,4);
@@ -667,27 +658,29 @@ DEFINE_PRIM(lime_gl_get_active_uniform,2);
 
 
 
+//only float arrays accepted
+//passe the full arrays instead of single element
+//if double should be accepted, it is highly important that whole arrays are passed
+// inTranspose = true crashes on mobile and_eq should be adequately forbidden by haxe headers
+value lime_gl_uniform_matrix(value inLocation, value inTranspose, value inBytes,value inCount){
+	
+	int loc = val_int(inLocation);
+	int count = val_int(inCount);
+	
+	bool trans = val_bool(inTranspose);
 
-value lime_gl_uniform_matrix(value inLocation, value inTranspose, value inBytes,value inCount)
-{
-   int loc = val_int(inLocation);
-   int count = val_int(inCount);
-   ByteArray bytes(inBytes);
-   int size = bytes.Size();
+	ByteArray bytes(inBytes);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	int nbElems = size / sizeof(float);
 
-   if (size>=count*4*4)
-   {
-      const float *data = (float *)bytes.Bytes();
+	switch(count){
+		case 2: glUniformMatrix2fv(loc,nbElems>>2	,trans,data);
+		case 3: glUniformMatrix3fv(loc,nbElems/9	,trans,data);
+		case 4: glUniformMatrix4fv(loc,nbElems>>4	,trans,data);
+	}
 
-      bool trans = val_bool(inTranspose);
-      if (count==2)
-         glUniformMatrix2fv(loc,1,trans,data);
-      else if (count==3)
-         glUniformMatrix3fv(loc,1,trans,data);
-      else if (count==4)
-         glUniformMatrix4fv(loc,1,trans,data);
-   }
-   return alloc_null();
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_uniform_matrix,4);
 
@@ -780,77 +773,69 @@ DEFINE_PRIM(lime_gl_uniform4iv,2);
 
 
 
-value lime_gl_uniform1fv(value inLocation,value inArray)
+value lime_gl_uniform1fv(value inLocation,value inByteBuffer)
 {
-   float *f = val_array_float(inArray);
-   if (f)
-      glUniform1fv(val_int(inLocation),1,f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glUniform1f(val_int(inLocation),d[0]);
-      else
-         lime_gl_uniform1f(inLocation,val_array_i(inArray,0));
-   }
-   return alloc_null();
+	int loc = val_int(inLocation);
+
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	int nbElems = size / sizeof(float);
+
+	glUniform1fv(loc,nbElems,data);
+
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_uniform1fv,2);
 
 
 
-value lime_gl_uniform2fv(value inLocation,value inArray)
+value lime_gl_uniform2fv(value inLocation,value inByteBuffer)
 {
-   float *f = val_array_float(inArray);
-   if (f)
-      glUniform2fv(val_int(inLocation),1,f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glUniform2f(val_int(inLocation),d[0],d[1]);
-      else
-         lime_gl_uniform2f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1));
-   }
-   return alloc_null();
+	int loc = val_int(inLocation);
+
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	int nbElems = size / sizeof(float);
+
+	glUniform2fv(loc,nbElems>>1,data);
+
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_uniform2fv,2);
 
 
 
-value lime_gl_uniform3fv(value inLocation,value inArray)
+value lime_gl_uniform3fv(value inLocation,value inByteBuffer)
 {
-   float *f = val_array_float(inArray);
-   if (f)
-      glUniform3fv(val_int(inLocation),1,f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glUniform3f(val_int(inLocation),d[0],d[1],d[2]);
-      else
-         lime_gl_uniform3f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2));
-   }
-   return alloc_null();
+	int loc = val_int(inLocation);
+
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	int nbElems = size / sizeof(float);
+
+	glUniform3fv(loc,nbElems/3,data);
+
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_uniform3fv,2);
 
 
 
-value lime_gl_uniform4fv(value inLocation,value inArray)
+value lime_gl_uniform4fv(value inLocation,value inByteBuffer)
 {
-   float *f = val_array_float(inArray);
-   if (f)
-      glUniform4fv(val_int(inLocation),1,f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glUniform4f(val_int(inLocation),d[0],d[1],d[2],d[3]);
-      else
-         lime_gl_uniform4f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2),val_array_i(inArray,3));
-   }
-   return alloc_null();
+	int loc = val_int(inLocation);
+
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	int nbElems = size / sizeof(float);
+
+	glUniform4fv(loc,nbElems>>2,data);
+
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_uniform4fv,2);
 
@@ -898,41 +883,33 @@ DEFINE_PRIM(lime_gl_vertex_attrib4f,5);
 
 
 
-value lime_gl_vertex_attrib1fv(value inLocation,value inArray)
+value lime_gl_vertex_attrib1fv(value inLocation,value inByteBuffer)
 {
-   #ifndef EMSCRIPTEN
-   float *f = val_array_float(inArray);
-   if (f)
-      glVertexAttrib1fv(val_int(inLocation),f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glVertexAttrib1f(val_int(inLocation),d[0]);
-      else
-         lime_gl_vertex_attrib1f(inLocation,val_array_i(inArray,0));
-   }
-   #endif
-   return alloc_null();
+	#ifndef EMSCRIPTEN
+	int loc = val_int(inLocation);
+	
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	
+	glVertexAttrib1fv(loc,data);
+	#endif
+	return alloc_null();
 }
 DEFINE_PRIM(lime_gl_vertex_attrib1fv,2);
 
 
 
-value lime_gl_vertex_attrib2fv(value inLocation,value inArray)
+value lime_gl_vertex_attrib2fv(value inLocation,value inByteBuffer)
 {
    #ifndef EMSCRIPTEN
-   float *f = val_array_float(inArray);
-   if (f)
-      glVertexAttrib2fv(val_int(inLocation),f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glVertexAttrib2f(val_int(inLocation),d[0],d[1]);
-      else
-         lime_gl_vertex_attrib2f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1));
-   }
+	int loc = val_int(inLocation);
+
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+
+	glVertexAttrib2fv(loc,data);
    #endif
    return alloc_null();
 }
@@ -940,20 +917,16 @@ DEFINE_PRIM(lime_gl_vertex_attrib2fv,2);
 
 
 
-value lime_gl_vertex_attrib3fv(value inLocation,value inArray)
+value lime_gl_vertex_attrib3fv(value inLocation,value inByteBuffer)
 {
    #ifndef EMSCRIPTEN
-   float *f = val_array_float(inArray);
-   if (f)
-      glVertexAttrib3fv(val_int(inLocation),f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glVertexAttrib3f(val_int(inLocation),d[0],d[1],d[2]);
-      else
-         lime_gl_vertex_attrib3f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2));
-   }
+	int loc = val_int(inLocation);
+	
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	
+	glVertexAttrib3fv(loc,data);
    #endif
    return alloc_null();
 }
@@ -961,20 +934,16 @@ DEFINE_PRIM(lime_gl_vertex_attrib3fv,2);
 
 
 
-value lime_gl_vertex_attrib4fv(value inLocation,value inArray)
+value lime_gl_vertex_attrib4fv(value inLocation,value inByteBuffer)
 {
    #ifndef EMSCRIPTEN
-   float *f = val_array_float(inArray);
-   if (f)
-      glVertexAttrib4fv(val_int(inLocation),f);
-   else
-   {
-      double *d = val_array_double(inArray);
-      if (d)
-         glVertexAttrib4f(val_int(inLocation),d[0],d[1],d[2],d[3]);
-      else
-         lime_gl_vertex_attrib4f(inLocation,val_array_i(inArray,0),val_array_i(inArray,1),val_array_i(inArray,2),val_array_i(inArray,3));
-   }
+    int loc = val_int(inLocation);
+	
+	ByteArray bytes(inByteBuffer);
+	int size = bytes.Size();
+	const float *data = (float *)bytes.Bytes();
+	
+	glVertexAttrib4fv(loc,data);
    #endif
    return alloc_null();
 }
@@ -1258,18 +1227,14 @@ DEFINE_PRIM(lime_gl_get_buffer_parameter,2);
 
 value lime_gl_bind_framebuffer(value target, value framebuffer)
 {
-   #ifndef HX_LINUX
    if (&glBindFramebuffer) glBindFramebuffer(val_int(target), val_int(framebuffer) );
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_bind_framebuffer,2);
 
 value lime_gl_bind_renderbuffer(value target, value renderbuffer)
 {
-   #ifndef HX_LINUX
    if (&glBindRenderbuffer) glBindRenderbuffer(val_int(target),val_int(renderbuffer));
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_bind_renderbuffer,2);
@@ -1277,55 +1242,59 @@ DEFINE_PRIM(lime_gl_bind_renderbuffer,2);
 value lime_gl_create_framebuffer( )
 {
    GLuint id = 0;
-   #ifndef HX_LINUX
    if (&glGenFramebuffers) glGenFramebuffers(1,&id);
-   #endif
    return alloc_int(id);
 }
 DEFINE_PRIM(lime_gl_create_framebuffer,0);
 
+value lime_gl_delete_framebuffer(value target)
+{
+   GLuint id = val_int(target);
+   if (&glDeleteFramebuffers) glDeleteFramebuffers(1, &id);
+   return alloc_null();
+}
+DEFINE_PRIM(lime_gl_delete_framebuffer,1);
+
 value lime_gl_create_render_buffer( )
 {
    GLuint id = 0;
-   #ifndef HX_LINUX
    if (&glGenRenderbuffers) glGenRenderbuffers(1,&id);
-   #endif
    return alloc_int(id);
 }
 DEFINE_PRIM(lime_gl_create_render_buffer,0);
 
+value lime_gl_delete_render_buffer(value target)
+{
+   GLuint id = val_int(target);
+   if (&glDeleteRenderbuffers) glDeleteRenderbuffers(1, &id);
+   return alloc_null();
+}
+DEFINE_PRIM(lime_gl_delete_render_buffer,1);
+
 value lime_gl_framebuffer_renderbuffer(value target, value attachment, value renderbuffertarget, value renderbuffer)
 {
-   #ifndef HX_LINUX
    if (&glFramebufferRenderbuffer) glFramebufferRenderbuffer(val_int(target), val_int(attachment), val_int(renderbuffertarget), val_int(renderbuffer) );
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_framebuffer_renderbuffer,4);
 
 value lime_gl_framebuffer_texture2D(value target, value attachment, value textarget, value texture, value level)
 {
-   #ifndef HX_LINUX
    if (&glFramebufferTexture2D) glFramebufferTexture2D( val_int(target), val_int(attachment), val_int(textarget), val_int(texture), val_int(level) );
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_framebuffer_texture2D,5);
 
 value lime_gl_renderbuffer_storage(value target, value internalFormat, value width, value height)
 {
-   #ifndef HX_LINUX
    if (&glRenderbufferStorage) glRenderbufferStorage( val_int(target), val_int(internalFormat), val_int(width), val_int(height) );
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_renderbuffer_storage,4);
 
 value lime_gl_check_framebuffer_status(value inTarget)
 {
-   #ifndef HX_LINUX
    if (&glCheckFramebufferStatus) return alloc_int( glCheckFramebufferStatus(val_int(inTarget)));
-   #endif
    return alloc_int(0);
 }
 DEFINE_PRIM(lime_gl_check_framebuffer_status,1);
@@ -1333,9 +1302,7 @@ DEFINE_PRIM(lime_gl_check_framebuffer_status,1);
 value lime_gl_get_framebuffer_attachment_parameter(value target, value attachment, value pname)
 {
    GLint result = 0;
-   #ifndef HX_LINUX
    if (&glGetFramebufferAttachmentParameteriv) glGetFramebufferAttachmentParameteriv( val_int(target), val_int(attachment), val_int(pname), &result);
-   #endif
    return alloc_int(result);
 }
 DEFINE_PRIM(lime_gl_get_framebuffer_attachment_parameter,3);
@@ -1343,9 +1310,7 @@ DEFINE_PRIM(lime_gl_get_framebuffer_attachment_parameter,3);
 value lime_gl_get_render_buffer_parameter(value target, value pname)
 {
    int result = 0;
-   #ifndef HX_LINUX
    if (&glGetRenderbufferParameteriv) glGetRenderbufferParameteriv(val_int(target), val_int(pname), &result);
-   #endif
    return alloc_int(result);
 }
 DEFINE_PRIM(lime_gl_get_render_buffer_parameter,2);
@@ -1461,6 +1426,13 @@ value lime_gl_depth_range(value inNear, value inFar)
 }
 DEFINE_PRIM(lime_gl_depth_range,2);
 
+
+value lime_gl_cull_face(value mode)
+{
+   glCullFace(val_int(mode));
+   return alloc_null();
+}
+DEFINE_PRIM(lime_gl_cull_face,1);
 
 
 value lime_gl_polygon_offset(value factor, value units)
@@ -1697,9 +1669,7 @@ DEFINE_PRIM_MULT(lime_gl_copy_tex_sub_image_2d);
 
 value lime_gl_generate_mipmap(value inTarget)
 {
-   #ifndef HX_LINUX
    if (&glGenerateMipmap) glGenerateMipmap(val_int(inTarget));
-   #endif
    return alloc_null();
 }
 DEFINE_PRIM(lime_gl_generate_mipmap,1);

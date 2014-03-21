@@ -46,8 +46,8 @@ FT_Library sgLibrary = 0;
 class FreeTypeFont : public FontFace
 {
 public:
-   FreeTypeFont(FT_Face inFace, int inPixelHeight, int inTransform) :
-     mFace(inFace), mPixelHeight(inPixelHeight),mTransform(inTransform)
+   FreeTypeFont(FT_Face inFace, int inPixelHeight, int inTransform, void* inBuffer) :
+     mFace(inFace), mPixelHeight(inPixelHeight),mTransform(inTransform), mBuffer(inBuffer)
    {
    }
 
@@ -55,6 +55,7 @@ public:
    ~FreeTypeFont()
    {
       FT_Done_Face(mFace);
+	  if (mBuffer) free(mBuffer);
    }
 
    bool LoadBitmap(int inChar)
@@ -155,16 +156,18 @@ public:
       }
    }
 
-
+   
+   void* mBuffer;
    FT_Face  mFace;
    uint32 mTransform;
    int    mPixelHeight;
 
 };
 
-int MyNewFace(const std::string &inFace, int inIndex, FT_Face *outFace, QuickVec<unsigned char> *inBytes)
+int MyNewFace(const std::string &inFace, int inIndex, FT_Face *outFace, QuickVec<unsigned char> *inBytes, void** outBuffer)
 {
    *outFace = 0;
+   *outBuffer = 0;
    int result = 0;
    result = FT_New_Face(sgLibrary, inFace.c_str(), inIndex, outFace);
    if (*outFace==0)
@@ -188,6 +191,7 @@ int MyNewFace(const std::string &inFace, int inIndex, FT_Face *outFace, QuickVec
          // The font owns the bytes here - so we just leak (fonts are not actually cleaned)
          if (!*outFace)
             free(buf);
+         else *outBuffer = buf;
       }
    }
    return result;
@@ -197,10 +201,12 @@ int MyNewFace(const std::string &inFace, int inIndex, FT_Face *outFace, QuickVec
 
 
 
-static FT_Face OpenFont(const std::string &inFace, unsigned int inFlags, QuickVec<unsigned char> *inBytes)
+static FT_Face OpenFont(const std::string &inFace, unsigned int inFlags, QuickVec<unsigned char> *inBytes, void** outBuffer)
 {
+   *outBuffer = 0;
    FT_Face face = 0;
-   MyNewFace(inFace.c_str(), 0, &face, inBytes);
+   void* pBuffer = 0;
+   MyNewFace(inFace.c_str(), 0, &face, inBytes, &pBuffer);
    if (face && inFlags!=0 && face->num_faces>1)
    {
       int n = face->num_faces;
@@ -208,10 +214,14 @@ static FT_Face OpenFont(const std::string &inFace, unsigned int inFlags, QuickVe
       for(int f=1;f<n;f++)
       {
          FT_Face test = 0;
-         MyNewFace(inFace.c_str(), f, &test, NULL);
+         void* pTestBuffer = 0;
+         MyNewFace(inFace.c_str(), f, &test, NULL, &pTestBuffer);
          if (test && test->style_flags == inFlags)
          {
             // A goodie!
+            FT_Done_Face(face);
+            if (pBuffer) free(pBuffer);
+            *outBuffer = pTestBuffer;
             return test;
          }
          else if (test)
@@ -219,6 +229,7 @@ static FT_Face OpenFont(const std::string &inFace, unsigned int inFlags, QuickVe
       }
       // The original face will have to do...
    }
+   *outBuffer = pBuffer;
    return face;
 }
 
@@ -281,24 +292,47 @@ bool GetFontFile(const std::string& inName,std::string &outFile)
 #else
 #define FONT_BASE "/Library/Fonts/"
 #endif
-
-   if (!strcasecmp(inName.c_str(),"_serif") || !strcasecmp(inName.c_str(),"times.ttf") || !strcasecmp(inName.c_str(),"times"))
-      outFile = FONT_BASE "Georgia.ttf";
-   else if (!strcasecmp(inName.c_str(),"_sans") || !strcasecmp(inName.c_str(),"helvetica.ttf"))
-      outFile = FONT_BASE "Arial Unicode.ttf"; // Helvetica.dfont does not render
-   else if (!strcasecmp(inName.c_str(),"_typewriter") || !strcasecmp(inName.c_str(),"courier.ttf"))
-      outFile = FONT_BASE "Courier New.ttf";
-   else if (!strcasecmp(inName.c_str(),"arial.ttf"))
-      outFile = FONT_BASE "Arial Unicode.ttf";
-   else
+   
+   outFile = FONT_BASE + inName;
+   FILE *file = fopen(outFile.c_str(), "rb");
+   if (file)
    {
-      outFile = FONT_BASE + inName;
+      fclose(file);
       return true;
-      //VLOG("Unfound font: %s\n",inName.c_str());
-      return false;
+   }
+   
+   const char *serifFonts[] = { "Georgia.ttf", "Times.ttf", "Times New Roman.ttf", 0 };
+   const char *sansFonts[] = { "Arial Unicode.ttf", "Arial.ttf", "Helvetica.ttf", 0 };
+   const char *fixedFonts[] = { "Courier New.ttf", "Courier.ttf", 0 };
+   
+   const char **fontSet = 0;
+   
+   if (!strcasecmp(inName.c_str(),"_serif") || !strcasecmp(inName.c_str(),"times.ttf") || !strcasecmp(inName.c_str(),"times"))
+      fontSet = serifFonts;
+   else if (!strcasecmp(inName.c_str(),"_sans") || !strcasecmp(inName.c_str(),"helvetica.ttf"))
+      fontSet = sansFonts;
+   else if (!strcasecmp(inName.c_str(),"_typewriter") || !strcasecmp(inName.c_str(),"courier.ttf"))
+      fontSet = fixedFonts;
+   else if (!strcasecmp(inName.c_str(),"arial.ttf"))
+      fontSet = sansFonts;
+   
+   if (fontSet)
+   {
+      while (*fontSet)
+      {
+         outFile = FONT_BASE + std::string(*fontSet);
+         
+         FILE *file = fopen(outFile.c_str(), "rb");
+         if (file)
+         {
+            fclose(file);
+            return true;
+         }
+         fontSet++;
+      }
    }
 
-   return true;
+   return false;
 }
 #else
 
@@ -388,7 +422,7 @@ std::string ToAssetName(const std::string &inPath)
 #endif
 }
 
-FT_Face FindFont(const std::string &inFontName, unsigned int inFlags, QuickVec<unsigned char> *inBytes)
+FT_Face FindFont(const std::string &inFontName, unsigned int inFlags, QuickVec<unsigned char> *inBytes, void** pBuffer)
 {
    std::string fname = inFontName;
    
@@ -397,20 +431,20 @@ FT_Face FindFont(const std::string &inFontName, unsigned int inFlags, QuickVec<u
       fname += ".ttf";
    #endif
      
-   FT_Face font = OpenFont(fname,inFlags,inBytes);
+   FT_Face font = OpenFont(fname,inFlags,inBytes, pBuffer);
 
    if (font==0 && fname.find("\\")==std::string::npos && fname.find("/")==std::string::npos)
    {
       std::string file_name;
 
       #if HX_MACOS
-      font = OpenFont(ToAssetName(fname).c_str(),inFlags,NULL);
+      font = OpenFont(ToAssetName(fname).c_str(),inFlags,NULL,pBuffer);
       #endif
 
       if (font==0 && GetFontFile(fname,file_name))
       {
          // printf("Found font in %s\n", file_name.c_str());
-         font = OpenFont(file_name.c_str(),inFlags,NULL);
+         font = OpenFont(file_name.c_str(),inFlags,NULL,pBuffer);
 
          // printf("Opened : %p\n", font);
       }
@@ -438,8 +472,9 @@ FontFace *FontFace::CreateFreeType(const TextFormat &inFormat,double inScale, Qu
       flags |= ffBold;
    if (inFormat.italic)
       flags |= ffItalic;
-
-   face = FindFont(str,flags,inBytes);
+   
+   void* pBuffer = 0;
+   face = FindFont(str,flags,inBytes,&pBuffer);
    if (!face)
       return 0;
 
@@ -452,7 +487,7 @@ FontFace *FontFace::CreateFreeType(const TextFormat &inFormat,double inScale, Qu
       transform |= ffBold;
    if ( !(face->style_flags & ffItalic) && inFormat.italic )
       transform |= ffItalic;
-   return new FreeTypeFont(face,height,transform);
+   return new FreeTypeFont(face,height,transform,pBuffer);
 }
 
 

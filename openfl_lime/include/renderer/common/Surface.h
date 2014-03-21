@@ -7,20 +7,32 @@
 #include <ByteArray.h>
 #include "renderer/common/Texture.h"
 #include "renderer/common/HardwareContext.h"
+#include <Hardware.h>
 
 
 namespace lime {
 	
 	
 	void HintColourOrder (bool inRedFirst);
-	enum { SURF_FLAGS_NOT_REPEAT_IF_NON_PO2 = 0x0001 };
+	
+	enum {
+		
+		SURF_FLAGS_NOT_REPEAT_IF_NON_PO2 = 0x0001,
+		SURF_FLAGS_USE_PREMULTIPLIED_ALPHA  = 0x0002,
+		SURF_FLAGS_HAS_PREMULTIPLIED_ALPHA  = 0x0004
+		
+	};
 	
 	
 	class Surface : public Object {
 		
 		public:
 			
+			#ifdef LIME_PREMULTIPLIED_ALPHA
+			Surface () : mTexture (0), mVersion (0), mFlags (SURF_FLAGS_NOT_REPEAT_IF_NON_PO2 | SURF_FLAGS_USE_PREMULTIPLIED_ALPHA), mAllowTrans (true) {}; // Non-PO2 will generate dodgy repeating anyhow...
+			#else
 			Surface () : mTexture (0), mVersion (0), mFlags (SURF_FLAGS_NOT_REPEAT_IF_NON_PO2), mAllowTrans (true) {}; // Non-PO2 will generate dodgy repeating anyhow...
+			#endif
 			
 			virtual RenderTarget BeginRender (const Rect &inRect, bool inForHitTest = false) = 0;
 			virtual void BlitChannel (const RenderTarget &outTarget, const Rect &inSrcRect, int inPosX, int inPosY, int inSrcChannel, int inDestChannel) const = 0;
@@ -28,7 +40,6 @@ namespace lime {
 			virtual void Clear (uint32 inColour, const Rect *inRect = 0) = 0;
 			virtual void EndRender () = 0;
 			virtual PixelFormat Format () const = 0;
-			virtual AlphaMode GetAlphaMode () const = 0;
 			virtual const uint8 *GetBase () const = 0;
 			virtual int GetStride () const = 0;
 			virtual int Height () const = 0;
@@ -49,7 +60,6 @@ namespace lime {
 			virtual int GPUFormat () const { return Format (); }
 			virtual void multiplyAlpha () {}
 			virtual void noise (unsigned int randomSeed, unsigned int low, unsigned int high, int channelOptions, bool grayScale) {}
-			virtual void setAlphaMode (AlphaMode am) {}
 			virtual void SetAllowTrans (bool inAllowTrans) { mAllowTrans = inAllowTrans; }
 			virtual void SetFlags (unsigned int inFlags) { mFlags = inFlags; }
 			virtual void setGPUFormat (PixelFormat pf) {}

@@ -58,11 +58,13 @@ enum EventType
    etJoyHatMove, // 26
    etJoyButtonDown, // 27
    etJoyButtonUp, // 28
+   etJoyDeviceAdded, //29
+   etJoyDeviceRemoved, //30
    
-   etSysWM, // 29
+   etSysWM, // 31
    
-   etRenderContextLost, // 30
-   etRenderContextRestored, // 31
+   etRenderContextLost, // 32
+   etRenderContextRestored, // 33
 };
 
 enum EventFlags
@@ -90,8 +92,8 @@ enum EventResult
 
 struct Event
 {
-   Event(EventType inType=etUnknown,int inX=0,int inY=0,int inValue=0,int inID=0,int inFlags=0,float inSx=1,float inSy=1):
-        type(inType), x(inX), y(inY), value(inValue), id(inID), flags(inFlags), result(erOk), sx(inSx), sy(inSy)
+   Event(EventType inType=etUnknown,int inX=0,int inY=0,int inValue=0,int inID=0,int inFlags=0,float inScaleX=1,float inScaleY=1,int inDeltaX=0,int inDeltaY=0):
+        type(inType), x(inX), y(inY), value(inValue), id(inID), flags(inFlags), result(erOk), scaleX(inScaleX), scaleY(inScaleY), deltaX(inDeltaX), deltaY(inDeltaY)
    {
    }
 
@@ -102,7 +104,8 @@ struct Event
    int       id;
    int       flags;
    EventResult result;
-   float       sx,sy;
+   float       scaleX, scaleY;
+   int         deltaX, deltaY;
 };
 
 typedef void (*EventHandler)(Event &ioEvent, void *inUserData);
@@ -162,6 +165,8 @@ public:
    void   setX(double inValue);
    double getY();
    void   setY(double inValue);
+   double getZ();
+   void   setZ(double inValue);
    virtual double getHeight();
    virtual void   setHeight(double inValue);
    virtual double getWidth();
@@ -311,6 +316,7 @@ protected:
    // Decomp
    double x;
    double y;
+   double z;
    double scaleX;
    double scaleY;
    double rotation;
@@ -427,6 +433,8 @@ public:
    virtual void   setOpaqueBackground(uint32 inBG);
    DisplayObject *HitTest(UserPoint inPoint,DisplayObject *inRoot=0,bool inRecurse=true);
    virtual void SetFullscreen(bool inFullscreen) { }
+   virtual void SetResolution(int inWidth, int inHeight) { }
+   virtual void SetScreenMode(ScreenMode mode) { }
    virtual void ShowCursor(bool inShow) { };
    virtual void SetCursor(Cursor inCursor)=0;
    virtual void EnablePopupKeyboard(bool inEnable) { }
@@ -436,6 +444,10 @@ public:
    virtual bool getMultitouchSupported() { return false; }
    virtual void setMultitouchActive(bool inActive) {  }
    virtual bool getMultitouchActive() {  return false; }
+   
+   virtual uint32 getBackgroundMask() { return 0xffffffff; }
+
+   virtual const char *getJoystickName(int id) { return NULL; }
 
    Matrix GetFullMatrix(bool inStageScaling);
    bool FinishEditOnEnter();

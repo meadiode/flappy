@@ -22,15 +22,15 @@
 #elif defined(TIZEN)
 
 //#include <osp/gl.h>
-#include <FGraphicsOpengl.h>
-//#include <FGraphicsOpengl2.h>
+//#include <FGraphicsOpengl.h>
+#include <gl2.h>
 
-using namespace Tizen::Graphics::Opengl;
+//using namespace Tizen::Graphics::Opengl;
 
 //#include <osp/gl2.h>
-//#define ALLOW_OGL2
-//#define LIME_FORCE_GLES2
-#define LIME_FORCE_GLES1
+#define ALLOW_OGL2
+#define LIME_FORCE_GLES2
+//#define LIME_FORCE_GLES1
 #define LIME_GLES
 
 #elif defined(IPHONE)
@@ -70,7 +70,9 @@ using namespace Tizen::Graphics::Opengl;
   #define glBindFramebuffer glBindFramebufferEXT
   #define glBindRenderbuffer glBindRenderbufferEXT
   #define glGenFramebuffers glGenFramebuffersEXT
+  #define glDeleteFramebuffers glDeleteFramebuffersEXT
   #define glGenRenderbuffers glGenRenderbuffersEXT
+  #define glDeleteRenderbuffers glDeleteRenderbuffersEXT
   #define glFramebufferRenderbuffer glFramebufferRenderbufferEXT
   #define glFramebufferTexture2D glFramebufferTexture2DEXT
   #define glRenderbufferStorage glRenderbufferStorageEXT
@@ -200,20 +202,18 @@ namespace lime
 
 Texture *OGLCreateTexture(Surface *inSurface,unsigned int inFlags);
 
-enum GPUProgID
+enum
 {
-   gpuNone = -1,
-   gpuSolid,
-   gpuColour,
-   gpuColourTransform,
-   gpuTexture,
-   gpuTextureColourArray,
-   gpuTextureTransform,
-   gpuBitmap,
-   gpuBitmapAlpha,
-   gpuRadialGradient,
-   gpuRadialFocusGradient,
-   gpuSIZE,
+   PROG_TEXTURE =           0x0001,
+   PROG_ALPHA_TEXTURE =     0x0002,
+   PROG_COLOUR_PER_VERTEX = 0x0004,
+   PROG_NORMAL_DATA =       0x0008,
+   PROG_RADIAL =            0x0010,
+   PROG_RADIAL_FOCUS =      0x0020,
+   PROG_TINT =              0x0040,
+   PROG_COLOUR_OFFSET =     0x0080,
+
+   PROG_COUNT =             0x0100,
 };
 
 typedef float Trans4x4[4][4];
@@ -221,22 +221,22 @@ typedef float Trans4x4[4][4];
 class GPUProg
 {
 public:
-   static GPUProg *create(GPUProgID inID, AlphaMode inAlphaMode);
+   static GPUProg *create(unsigned int inID);
 
    virtual ~GPUProg() {}
 
    virtual bool bind() = 0;
 
-   virtual void setPositionData(const float *inData, bool inIsPerspective) = 0;
-   virtual void setTexCoordData(const float *inData) = 0;
-   virtual void setColourData(const int *inData) = 0;
-   virtual void setColourTransform(const ColorTransform *inTransform) = 0;
-   virtual int  getTextureSlot() = 0;
-
+   virtual void disableSlots() = 0;
    virtual void setTransform(const Trans4x4 &inTrans) = 0;
-   virtual void setTint(unsigned int inColour) = 0;
+   virtual void setColourTransform(const ColorTransform *inTransform, unsigned int inColour) = 0;
    virtual void setGradientFocus(float inFocus) = 0;
-   virtual void finishDrawing() = 0;
+   
+   int vertexSlot;
+   int textureSlot;
+   int normalSlot;
+   int colourSlot;
+
 };
 
 void InitOGL2Extensions();

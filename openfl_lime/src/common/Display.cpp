@@ -28,7 +28,7 @@ DisplayObject::DisplayObject(bool inInitRef) : Object(inInitRef)
    mParent = 0;
    mGfx = 0;
    mDirtyFlags = 0;
-   x = y = 0;
+   x = y = z = 0;
    scaleX = scaleY = 1.0;
    rotation = 0;
    visible = true;
@@ -334,6 +334,7 @@ Matrix &DisplayObject::GetLocalMatrix()
       mLocalMatrix.m11 = c*scaleY;
       mLocalMatrix.mtx = x;
       mLocalMatrix.mty = y;
+      mLocalMatrix.mtz = z;
    }
    return mLocalMatrix;
 }
@@ -354,6 +355,7 @@ void DisplayObject::UpdateDecomp()
       mDirtyFlags ^= dirtDecomp;
       x = mLocalMatrix.mtx;
       y = mLocalMatrix.mty;
+      z = mLocalMatrix.mtz;
       scaleX = sqrt( mLocalMatrix.m00*mLocalMatrix.m00 +
                      mLocalMatrix.m10*mLocalMatrix.m10 );
       scaleY = sqrt( mLocalMatrix.m01*mLocalMatrix.m01 +
@@ -534,6 +536,23 @@ void DisplayObject::setScaleY(double inValue)
       mDirtyFlags |= dirtLocalMatrix;
       scaleY = inValue;
       DirtyCache();
+   }
+}
+
+double DisplayObject::getZ()
+{
+   UpdateDecomp();
+   return z;
+}
+
+void DisplayObject::setZ(double inValue)
+{
+   UpdateDecomp();
+   if (z!=inValue)
+   {
+      mDirtyFlags |= dirtLocalMatrix;
+      z = inValue;
+      DirtyCache(true);
    }
 }
 
@@ -1223,7 +1242,7 @@ void DisplayObjectContainer::Render( const RenderTarget &inTarget, const RenderS
                bitmap->IncRef();
 
                if (bg && obj->IsBitmapRender(inTarget.IsHardware()))
-                  bitmap->Clear(obj->opaqueBackground | 0xff000000,0);
+                  bitmap->Clear(obj->opaqueBackground | 0xff000000);
                else
                   bitmap->Zero();
                // debug ...
@@ -1494,7 +1513,8 @@ public:
       mSurface = inStage->GetPrimarySurface();
       mToFlip = inStage;
       mTarget = mSurface->BeginRender( Rect(mSurface->Width(),mSurface->Height()),false );
-      mSurface->Clear(inRGB | 0xff000000 );
+
+      mSurface->Clear( (inRGB | 0xff000000) & inStage->getBackgroundMask() );
    }
    int Width() const { return mSurface->Width(); }
    int Height() const { return mSurface->Height(); }
@@ -1651,7 +1671,7 @@ void Stage::HandleEvent(Event &inEvent)
          mFocusObject->OnKey(inEvent);
       #ifdef ANDROID
       // Non-cancelled back key ...
-      if (inEvent.result==0 && inEvent.code==27 && inEvent.type == etKeyUp)
+      if (inEvent.result==0 && inEvent.value==27 && inEvent.type == etKeyUp)
       {
           StopAnimation();
       }
@@ -1672,8 +1692,8 @@ void Stage::HandleEvent(Event &inEvent)
    {
       UserPoint pixels(inEvent.x,inEvent.y);
       hit_obj = HitTest(pixels);
-      //if (inEvent.type!=etTouchMove)
-        //ELOG("  type=%d %d,%d obj=%p (%S)", inEvent.type, inEvent.x, inEvent.y, hit_obj, hit_obj?hit_obj->name.c_str():L"(none)");
+      // if (inEvent.type!=etTouchMove)
+      //   ELOG("  type=%d %d,%d obj=%p (%S)", inEvent.type, inEvent.x, inEvent.y, hit_obj, hit_obj?hit_obj->name.c_str():L"(none)");
 
       SimpleButton *but = hit_obj ? dynamic_cast<SimpleButton *>(hit_obj) : 0;
       inEvent.id = hit_obj ? hit_obj->id : id;

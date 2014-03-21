@@ -148,7 +148,6 @@ public:
          return swap ? pfARGBSwap : pfARGB;
       return swap ? pfXRGBSwap : pfXRGB;
    }
-   AlphaMode GetAlphaMode() const { return amStraight; }
    const uint8 *GetBase() const { return (const uint8 *)mSurf->pixels; }
    int GetStride() const { return mSurf->pitch; }
 
@@ -684,6 +683,14 @@ public:
 
    double mDownX;
    double mDownY;
+   
+   const char *getJoystickName(int id) {
+      #if !defined(BLACKBERRY) && !defined(EMSCRIPTEN)
+      return SDL_JoystickNameForIndex(id);
+      #else
+      return "";
+      #endif
+   }
 
    Surface *GetPrimarySurface()
    {

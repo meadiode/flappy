@@ -142,16 +142,15 @@ static Surface *TryJPEG(FILE *inFile,const uint8 *inData, int inDataLen)
    // Initialize the JPEG decompression object.
    jpeg_create_decompress(&cinfo);
 
-
    // Specify data source (ie, a file, or buffer)
    MySrcManager manager(inData,inDataLen);
-   
    if (inFile)
       jpeg_stdio_src(&cinfo, inFile);
    else
    {
       cinfo.src = &manager.pub;
    }
+
    // Read file parameters with jpeg_read_header().
    if (jpeg_read_header(&cinfo, TRUE)!=JPEG_HEADER_OK)
       return 0;
@@ -406,7 +405,7 @@ static Surface *TryPNG(FILE *inFile,const uint8 *inData, int inDataLen)
    bool has_alpha = color_type== PNG_COLOR_TYPE_GRAY_ALPHA ||
                     color_type==PNG_COLOR_TYPE_RGB_ALPHA ||
                     png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS);
-                    
+   
    /* Add filler (or alpha) byte (before/after each RGB triplet) */
    png_set_expand(png_ptr);
    png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
