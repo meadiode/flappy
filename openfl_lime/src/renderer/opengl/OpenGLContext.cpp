@@ -190,7 +190,7 @@ namespace lime {
 		mTrans[0][0] = inModelView.m00 * mScaleX;
 		mTrans[0][1] = inModelView.m01 * mScaleX;
 		mTrans[0][2] = 0;
-		mTrans[0][3] = (inModelView.mtx + eyeOffset) * mScaleX + mOffsetX;
+		mTrans[0][3] = (inModelView.mtx) * mScaleX + mOffsetX;
 
 		mTrans[1][0] = inModelView.m10 * mScaleY;
 		mTrans[1][1] = inModelView.m11 * mScaleY;

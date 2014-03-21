@@ -57,7 +57,6 @@ def configure(conf):
         'src/renderer/software/TileRenderer.cpp',
         'src/renderer/software/TriangleRender.cpp',
 
-        'src/renderer/opengl/OpenGL2Context.cpp',
         'src/renderer/opengl/OpenGLContext.cpp',
         'src/renderer/opengl/OpenGLInit.cpp',
         'src/renderer/opengl/OpenGLProgram.cpp',

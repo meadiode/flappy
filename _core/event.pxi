@@ -21,7 +21,7 @@ cdef extern from "Display.h" namespace "lime":
         int       id
         int       flags
         EventResult result
-        float       sx,sy
+        float       scaleX,scaleY
 
 etUnknown           = 0
 etKeyDown           = 1
@@ -96,8 +96,8 @@ cdef class _Event:
     def result(self):
         return self.thisptr.result    
     @property
-    def sx(self):
-        return self.thisptr.sx    
+    def scaleX(self):
+        return self.thisptr.scaleX    
     @property
-    def sy(self):
-        return self.thisptr.sy
+    def scaleY(self):
+        return self.thisptr.scaleY

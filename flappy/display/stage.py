@@ -526,7 +526,7 @@ class Stage(DisplayObjectContainer, _core._Stage):
             stack.reverse()
             local = obj.globalToLocal(Point(event.x, event.y))
             evt = TouchEvent._create(etype, event, local, obj,
-                                        event.sx, event.sy)
+                                        event.scaleX, event.scaleY)
             evt.touchPointID = event.value
             evt.isPrimaryTouchPoint = \
                                 bool(event.flags & TouchEvent.efPrimaryTouch)
@@ -541,7 +541,7 @@ class Stage(DisplayObjectContainer, _core._Stage):
                 obj._fire_event(evt)
         else:
             evt = TouchEvent._create(etype, event, Point(event.x, event.y),
-                                        None, event.sx, event.sy)
+                                        None, event.scaleX, event.scaleY)
             evt.touchPointID = event.value
             evt.isPrimaryTouchPoint = \
                                 bool(event.flags & TouchEvent.efPrimaryTouch)
