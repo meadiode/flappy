@@ -570,11 +570,13 @@ class Stage(DisplayObjectContainer, _core._Stage):
         self._drag_object.y = dragobj_y
 
     def _on_joystick(self, event, event_type):
-        raise NotImplementedError
+#TODO: joystick handler
+        pass
 
     def _should_rotate(self, event):
-        raise NotImplementedError
-
+#TODO: 'should rotate' handler 
+        pass
+    
     def _start_drag(self, obj, lock_center, bounds):
         self._drag_bounds = None
         if bounds:
