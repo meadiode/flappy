@@ -46,6 +46,11 @@ cdef extern from "LimeThread.h" namespace "lime":
     bool        IsMainThread()
     void        SetMainThread()
 
+cdef extern from "QuickVec.h" namespace "lime":
+    cdef cppclass QuickVec[T]:
+        QuickVec()
+        void    push_back(const T &item)
+
 cdef extern from "string" namespace "std":
     cdef cppclass string:
         char* c_str()
@@ -59,6 +64,7 @@ include "matrix.pxi"
 include "surface.pxi"
 include "tilesheet.pxi"
 include "graphics.pxi"
+include "filters.pxi"
 include "display.pxi"
 include "textfield.pxi"
 include "directrenderer.pxi"
