@@ -163,3 +163,4 @@ def start(startup, int width, int height, const char* title, **kw_flags):
 
 def stop():
     StopAnimation()
+ 
