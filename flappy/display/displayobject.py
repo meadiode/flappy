@@ -22,6 +22,7 @@ class DisplayObject(_DisplayObject, EventDispatcher):
             self.name = name
         self._graphics = None
         self._scroll_rect = None
+        self._filters = []
 
     def _native_init(self):
         _DisplayObject.__init__(self)
@@ -346,6 +347,7 @@ class DisplayObject(_DisplayObject, EventDispatcher):
         self._scroll_rect = value
         self.setScrollRect(value)
 
+#cacheAsBitmap
     @property
     def cacheAsBitmap(self):
         return self.getCacheAsBitmap()
@@ -354,6 +356,7 @@ class DisplayObject(_DisplayObject, EventDispatcher):
     def cacheAsBitmap(self, value):
         self.setCacheAsBitmap(value)
 
+#rotaton
     @property
     def rotation(self):
         return self.getRotation()
@@ -361,3 +364,12 @@ class DisplayObject(_DisplayObject, EventDispatcher):
     @rotation.setter
     def rotation(self, value):
         self.setRotation(value)
+
+    @property
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, filter_list):
+        self._set_filters(filter_list)
+        self._filters = filter_list

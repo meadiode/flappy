@@ -110,6 +110,7 @@ cdef extern from "Display.h" namespace "lime":
         Matrix          &GetLocalMatrix()
         ColorTransform  &GetLocalColorTransform()
         ColorTransform  GetFullColorTransform()
+        void            setFilters(QuickVec[Filter*] &inFilters)
 
     cdef cppclass DisplayObjectContainer(DisplayObject):
         DisplayObjectContainer()
@@ -215,6 +216,7 @@ IF PLATFORM == 'IOS':
 cdef extern from "Display.h" namespace "lime::Stage":
     Stage *GetCurrent()
 
+
 cdef class _DisplayObject:
     cdef DisplayObject *do_ptr
     cdef bool created
@@ -223,11 +225,13 @@ cdef class _DisplayObject:
         self.do_ptr = new DisplayObject()
         self.do_ptr.IncRef()
         self.created = True
+        self._filters = []
 
     def __dealloc__(self):
         if self.created:
             self.do_ptr.DecRef()
 
+#TODO: refactor method names
     def setName(self, char *name):
         cdef WString nm = UTF8ToWide(name)
         self.do_ptr.setName(nm)
@@ -516,6 +520,11 @@ cdef class _DisplayObject:
     def getGraphics(self):
         return _Graphics(self)
 
+    def _set_filters(self, filter_list):
+        cdef QuickVec[Filter*] cfilter_list
+        _to_native_filter_list(cfilter_list, filter_list)
+        self.do_ptr.setFilters(cfilter_list)
+        self._filters = filter_list
 
 cdef class _DisplayObjectContainer(_DisplayObject):
     cdef DisplayObjectContainer *doc_ptr
