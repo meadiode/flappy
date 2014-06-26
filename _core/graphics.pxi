@@ -29,11 +29,36 @@ cdef extern from "Graphics.h" namespace "lime":
         imRGB,
         imLinearRGB
 
-    enum RenderPhase:
+    cdef enum RenderPhase:
         rpBitmap, 
         rpRender, 
         rpHitTest, 
         rpCreateMask
+
+    cdef enum PathCommand:
+        pcNoOp,
+        pcMoveTo,
+        pcLineTo,
+        pcCurveTo,
+        pcWideMoveTo,
+        pcWideLineTo,
+        pcArcTo,
+        pcBeginAt,
+        pcPointsXY,
+        pcPointsXYRGBA,
+        pcTile,
+        pcTile_Trans_Bit,
+        pcTile_Col_Bit,
+        pcTileTrans,
+        pcTileCol,
+        pcTileTransCol,
+        pcBlendModeAdd,
+        pcBlendModeMultiply,
+        pcBlendModeScreen
+
+    cdef enum WindingRule:
+        wrOddEven,
+        wrNonZero
 
     cdef cppclass Transform:
         Transform() 
@@ -83,6 +108,8 @@ cdef extern from "Graphics.h" namespace "lime":
         void drawRect(float x, float y, float width, float height)
         void drawRoundRect(float x, float y,float width, float height,
                             float ellipseWidth, float ellipseHeight)
+        void drawPath(QuickVec[uint8] commands, QuickVec[float] data, 
+                        WindingRule winding)
 
         void drawGraphicsDatum(GraphicsGradientFill *inData)
 
@@ -147,27 +174,26 @@ cdef class _Graphics:
         self.thisptr.drawRect(x, y, width, height)
 
     def drawRoundRect(self, float x, float y,float width, float height,
-                            float ellipseWidth, float ellipseHeight):
-        self.thisptr.drawRoundRect(x, y, width, height, ellipseWidth, ellipseHeight)
+                        float ellipseWidth, float ellipseHeight):
+        self.thisptr.drawRoundRect(x, y, width, height, 
+                                    ellipseWidth, ellipseHeight)
 
     def _beginGradientFill(self, bool linear, colors, alphas, ratios, matrix,
                              SpreadMethod spread_method, 
                                 InterpolationMethod interpolation_method, 
                                     float focal_point_ratio, bool for_solid):
-        cdef Matrix m
-        m.m00 = matrix.a 
-        m.m01 = matrix.b 
-        m.m10 = matrix.c 
-        m.m11 = matrix.d
-        m.mtx = matrix.tx
-        m.mty = matrix.ty
+        cdef Matrix mat
+        mat.m00 = matrix.a 
+        mat.m01 = matrix.b 
+        mat.m10 = matrix.c 
+        mat.m11 = matrix.d
+        mat.mtx = matrix.tx
+        mat.mty = matrix.ty
 
         cdef GraphicsGradientFill *grad = new GraphicsGradientFill(
-                                                                linear, 
-                                                                m, 
-                                                                spread_method,
-                                                                interpolation_method,
-                                                                focal_point_ratio)
+                                                linear, mat, spread_method,
+                                                    interpolation_method,
+                                                            focal_point_ratio)
         n = min(len(colors), len(alphas), len(ratios))
 
         for i in range(n):
@@ -177,6 +203,18 @@ cdef class _Graphics:
         grad.IncRef()
         self.thisptr.drawGraphicsDatum(grad)
         grad.DecRef()
+
+    def drawPath(self, commands, data, winding):
+        cdef QuickVec[uint8] ccommands
+        cdef QuickVec[float] cdata
+
+        for com in commands:
+            ccommands.push_back(com)
+
+        for val in data:
+            cdata.push_back(val)
+
+        self.thisptr.drawPath(ccommands, cdata, wrOddEven)
 
     def drawTiles(self, _Tilesheet sheet, tiles_data, flags):
         cdef BlendMode blend = bmNormal
